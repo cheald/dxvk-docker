@@ -20,19 +20,43 @@ fi
 read -p "Install dxvk-master to Lutris? [Y/n]: " install
 install=${install:-Y}
 
-if [[ $install =  "Y" ]] || [[ $install = "y" ]] ; then
-  location="/bogus/location"
-  while [[ ! -d $location ]] ; do
-    read -p "Install location: [~/.local/share/lutris/runtime/dxvk]: " location
-    location=${location:-~/.local/share/lutris/runtime/dxvk}
-    if [[ ! -d $location ]]; then
-      echo "Invalid install location: $location does not exist"
-    fi
-  done
+case $install in
+  [yY])
+      read -p "Do you want me to try to find your Lutris location? [Y/n]" doFind
+      doFind=${doFind:-y}
+      case $doFind in
+        [yY])
+          location=$(locate "lutris/runtime/dxvk" | grep -e "lutris/runtime/dxvk$" | head -n 1)
+          read -p "Found location: ${location} - is this right? [y/n]" isCorrect
+          isCorrect=${isCorrect:-y}
+          case $isCorrect in
+            [yY])
+              location=$location
+              ;;
+            *)
+              location="/bogus/location"
+              ;;
+          esac
+          ;;
+        *)
+          location="/bogus/location"
+          ;;
+      esac
 
-  echo "Installing to ${location}"
-  rm -rf $location/dxvk-master
-  mv out/dxvk-master $location
-  echo "dxvk-master installed. Enter 'dxvk-master' as your DXVK version in Lutris."
-  rm -rf out
-fi
+      while [[ ! -d $location ]] ; do
+        read -p "Install location: [${location}]: " location
+        location=${location:-~/.local/share/lutris/runtime/dxvk}
+        if [[ ! -d $location ]]; then
+          echo "Invalid install location: $location does not exist"
+        fi
+      done
+
+      echo "Installing to ${location}"
+      rm -rf $location/dxvk-master
+      mv out/dxvk-master $location
+      echo "dxvk-master installed. Enter 'dxvk-master' as your DXVK version in Lutris."
+      rm -rf out
+    ;;
+  *)
+    ;;
+esac

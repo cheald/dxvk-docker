@@ -11,8 +11,8 @@ git checkout $gitref
 cd ..
 
 if [[ ! -d out/dxvk-master ]] ; then
-  docker build . --build-arg UID=$UID --build-arg GID=$(id -g $USER) -t dxvk-build:latest
-  docker run -u=$UID:$(id -g $USER) -it -v $(pwd)/dxvk:/root/build dxvk-build:latest
+  docker pull cheald/dxvk-docker:latest
+  docker run -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/dxvk:/root/build cheald/dxvk-docker:latest
   rm -rf out
   mv dxvk/out .
 fi
@@ -34,4 +34,5 @@ if [[ $install =  "Y" ]] || [[ $install = "y" ]] ; then
   rm -rf $location/dxvk-master
   mv out/dxvk-master $location
   echo "dxvk-master installed. Enter 'dxvk-master' as your DXVK version in Lutris."
+  rm -rf out
 fi

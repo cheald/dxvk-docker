@@ -17,8 +17,5 @@ RUN update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++
 
 WORKDIR /root/build
 RUN mkdir -p /root/out/dxvk-master
-ARG UID
-ARG GID
-ADD rebuild.sh /root/rebuild.sh
-RUN chown -R $UID:$GID /root
-CMD ["/root/build/package-release.sh", "master", "/root/build/out", "--no-package"]
+ADD build.sh /root/build.sh
+CMD ["/root/build.sh"]

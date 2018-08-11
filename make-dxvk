@@ -1,0 +1,37 @@
+#!/bin/bash
+if [[ ! -d dxvk ]] ; then
+  git clone https://github.com/doitsujin/dxvk.git
+fi
+
+read -p "What gitref do you want to build? [master]: " gitref
+gitref=${gitref:-master}
+cd dxvk
+git fetch -a
+git checkout $gitref
+cd ..
+
+if [[ ! -d out/dxvk-master ]] ; then
+  docker build . --build-arg UID=$UID --build-arg GID=$(id -g $USER) -t dxvk-build:latest
+  docker run -u=$UID:$(id -g $USER) -it -v $(pwd)/dxvk:/root/build dxvk-build:latest
+  rm -rf out
+  mv dxvk/out .
+fi
+
+read -p "Install dxvk-master to Lutris? [Y/n]: " install
+install=${install:-Y}
+
+if [[ $install =  "Y" ]] || [[ $install = "y" ]] ; then
+  location="/bogus/location"
+  while [[ ! -d $location ]] ; do
+    read -p "Install location: [~/.local/share/lutris/runtime/dxvk]: " location
+    location=${location:-~/.local/share/lutris/runtime/dxvk}
+    if [[ ! -d $location ]]; then
+      echo "Invalid install location: $location does not exist"
+    fi
+  done
+
+  echo "Installing to ${location}"
+  rm -rf $location/dxvk-master
+  mv out/dxvk-master $location
+  echo "dxvk-master installed. Enter 'dxvk-master' as your DXVK version in Lutris."
+fi

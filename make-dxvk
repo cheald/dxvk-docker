@@ -1,21 +1,44 @@
 #!/bin/bash
+IMAGE="cheald/dxvk-docker:latest"
+DXVK_REPO="https://github.com/doitsujin/dxvk.git"
+GITREF="master"
+
 if [[ ! -d dxvk ]] ; then
-  git clone https://github.com/doitsujin/dxvk.git
+  git clone $DXVK_REPO
 fi
 
-read -p "What gitref do you want to build? [master]: " gitref
-gitref=${gitref:-master}
+read -p "What branch/tag/gitref do you want to build? [master]: " gitref
+gitref=${gitref:-$GITREF}
 cd dxvk
 git fetch -a
 git checkout $gitref
 cd ..
 
-if [[ ! -d out/dxvk-master ]] ; then
-  docker pull cheald/dxvk-docker:latest
-  docker run -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/dxvk:/root/build cheald/dxvk-docker:latest
-  rm -rf out
-  mv dxvk/out .
+forceBuild="y"
+if [[ -d out/dxvk-master ]] ; then
+  read -p "dxvk-master appears to be built already. Do you want to rebuild it? [y/N]" forceBuild
+  forceBuild=${forceBuild:-n}
 fi
+
+case $forceBuild in
+  [yY])
+    docker pull $IMAGE
+    if [ $? -ne 0 ] ; then
+      echo "Error pulling $IMAGE - building. This may take a bit..."
+      docker build . -t $IMAGE
+      if [ $? -ne 0 ] ; then
+        echo "Error building docker image. Exiting..."
+        exit 1
+      fi
+    fi
+    docker run -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/dxvk:/root/build $IMAGE
+    rm -rf out
+    mv dxvk/out .
+    ;;
+  *)
+    echo "Skipping build..."
+    ;;
+esac
 
 read -p "Install dxvk-master to Lutris? [Y/n]: " install
 install=${install:-Y}
@@ -53,9 +76,8 @@ case $install in
 
       echo "Installing to ${location}"
       rm -rf $location/dxvk-master
-      mv out/dxvk-master $location
+      cp -R out/dxvk-master $location
       echo "dxvk-master installed. Enter 'dxvk-master' as your DXVK version in Lutris."
-      rm -rf out
     ;;
   *)
     ;;

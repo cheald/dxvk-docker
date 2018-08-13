@@ -1,83 +1,142 @@
 #!/bin/bash
-IMAGE="cheald/dxvk-docker:latest"
-DXVK_REPO="https://github.com/doitsujin/dxvk.git"
-GITREF="master"
 
-if [[ ! -d dxvk ]] ; then
+# A POSIX variable
+OPTIND=1  # Reset in case getopts has been used previously in the shell.
+IMAGE=${IMAGE:-"cheald/dxvk-docker:latest"}
+DXVK_REPO=${DXVK_REPO:-"https://github.com/doitsujin/dxvk.git"}
+DEFAULT_GITREF=master
+GITREF=""
+REPO_DIR=${REPO_DIR:-dxvk}
+
+while getopts "h?b:r:l:" opt; do
+  case "$opt" in
+  h|\?)
+    cat << EOF
+$(basename "$0") [-h] [-b branch] [-r repository_url] [-m image] [-l install_location]
+
+where:
+    -h  Show this help text
+    -b  Set the Git branch to build
+    -r  Set the Git repository to build from (default: $DXVK_REPO)
+    -l  Set the Lutris install location (path to lutris/runtime/dxvk)
+EOF
+    exit 0
+    ;;
+  b)  GITREF=$OPTARG
+    ;;
+  r)  DXVK_REPO=$OPTARG
+    ;;
+  m)  IMAGE=$OPTARG
+    ;;
+  l)  INSTALL_LOCATION=$OPTARG
+    ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+[ "${1:-}" = "--" ] && shift
+
+if [[ ! -d $REPO_DIR ]] ; then
   git clone $DXVK_REPO
 fi
 
-read -p "What branch/tag/gitref do you want to build? [master]: " gitref
-gitref=${gitref:-$GITREF}
-cd dxvk
+if [ -z "$GITREF" ]; then
+  read -p "What branch/tag/gitref do you want to build? [master]: " $GITREF
+  gitref=${gitref:-$DEFAULT_GITREF}
+fi
+
+cd $REPO_DIR
 git fetch -a
-git checkout $gitref
+
+_=$(git show-ref --verify refs/heads/$GITREF 2>&1)
+isBranch=$?
+
+_=$(git show-ref --verify refs/tags/$GITREF 2>&1)
+isTag=$?
+
+_=$(git rev-parse --verify "$GITREF^{commit}" 2>&1)
+isCommit=$?
+
+if [ $isBranch -eq 0 ] ; then
+  git checkout origin/$GITREF
+elif [ $isTag -eq 0 ] ; then
+  git checkout tags/$GITREF
+elif [ $isCommit -eq 0 ] ; then
+  git checkout $GITREF
+else
+  echo "Invalid gitref!"
+  exit 1
+fi
+
+echo ""
+echo "About to build commit:"
+echo "----------------------------------------------------------"
+echo $(git log HEAD~1..HEAD)
+echo "----------------------------------------------------------"
+echo ""
 cd ..
 
+targetDir="dxvk-$(echo $GITREF | tr "/" "-" )"
+
 forceBuild="y"
-if [[ -d out/dxvk-master ]] ; then
-  read -p "dxvk-master appears to be built already. Do you want to rebuild it? [y/N]" forceBuild
+if [[ -d out/$targetDir ]] ; then
+  read -p "$targetDir appears to be built already. Do you want to rebuild it? [y/N]" forceBuild
   forceBuild=${forceBuild:-n}
 fi
 
 case $forceBuild in
   [yY])
-    docker pull $IMAGE
-    if [ $? -ne 0 ] ; then
-      echo "Error pulling $IMAGE - building. This may take a bit..."
-      docker build . -t $IMAGE
-      if [ $? -ne 0 ] ; then
-        echo "Error building docker image. Exiting..."
-        exit 1
-      fi
-    fi
-    docker run -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/dxvk:/root/build $IMAGE
+    docker run -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/$REPO_DIR:/root/build $IMAGE
     rm -rf out
-    mv dxvk/out .
+    mkdir out
+    mv $REPO_DIR/out/dxvk-master out/$targetDir
     ;;
   *)
     echo "Skipping build..."
     ;;
 esac
 
-read -p "Install dxvk-master to Lutris? [Y/n]: " install
+read -p "Install $targetDir to Lutris? [Y/n]: " install
 install=${install:-Y}
 
 case $install in
   [yY])
-      read -p "Do you want me to try to find your Lutris location? [Y/n]" doFind
-      doFind=${doFind:-y}
-      case $doFind in
-        [yY])
-          location=$(locate "lutris/runtime/dxvk" | grep -e "lutris/runtime/dxvk$" | head -n 1)
-          read -p "Found location: ${location} - is this right? [y/n]" isCorrect
-          isCorrect=${isCorrect:-y}
-          case $isCorrect in
-            [yY])
-              location=$location
-              ;;
-            *)
-              location="/bogus/location"
-              ;;
-          esac
-          ;;
-        *)
-          location="/bogus/location"
-          ;;
-      esac
+      if [ -z "$INSTALL_LOCATION" ] ; then
+        read -p "Do you want me to try to find your Lutris location? [Y/n]" doFind
+        doFind=${doFind:-y}
+        case $doFind in
+          [yY])
+            INSTALL_LOCATION=$(locate "lutris/runtime/dxvk" | grep -e "lutris/runtime/dxvk$" | head -n 1)
+            read -p "Found location: ${INSTALL_LOCATION} - is this right? [y/n]" isCorrect
+            isCorrect=${isCorrect:-y}
+            case $isCorrect in
+              [yY])
+                INSTALL_LOCATION=$INSTALL_LOCATION
+                ;;
+              *)
+                INSTALL_LOCATION="/bogus/location"
+                ;;
+            esac
+            ;;
+          *)
+            INSTALL_LOCATION="/bogus/location"
+            ;;
+        esac
+      fi
 
-      while [[ ! -d $location ]] ; do
-        read -p "Install location: [${location}]: " location
-        location=${location:-~/.local/share/lutris/runtime/dxvk}
-        if [[ ! -d $location ]]; then
-          echo "Invalid install location: $location does not exist"
+      while [[ ! -d $INSTALL_LOCATION ]] ; do
+        read -p "Install location: [${INSTALL_LOCATION}]: " INSTALL_LOCATION
+        INSTALL_LOCATION=${INSTALL_LOCATION:-~/.local/share/lutris/runtime/dxvk}
+        if [[ ! -d $INSTALL_LOCATION ]]; then
+          echo "Invalid install location: $INSTALL_LOCATION does not exist"
         fi
       done
 
-      echo "Installing to ${location}"
-      rm -rf $location/dxvk-master
-      cp -R out/dxvk-master $location
-      echo "dxvk-master installed. Enter 'dxvk-master' as your DXVK version in Lutris."
+      echo "Installing to ${INSTALL_LOCATION}"
+      rm -rf $INSTALL_LOCATION/$targetDir
+      cp -R out/$targetDir $INSTALL_LOCATION
+      echo "$targetDir installed. Enter '$targetDir' as your DXVK version in Lutris."
     ;;
   *)
     ;;

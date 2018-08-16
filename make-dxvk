@@ -42,8 +42,8 @@ if [[ ! -d $REPO_DIR ]] ; then
 fi
 
 if [ -z "$GITREF" ]; then
-  read -p "What branch/tag/gitref do you want to build? [master]: " $GITREF
-  gitref=${gitref:-$DEFAULT_GITREF}
+  read -p "What branch/tag/gitref do you want to build? [master]: " GITREF
+  GITREF=${GITREF:-$DEFAULT_GITREF}
 fi
 
 cd $REPO_DIR

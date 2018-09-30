@@ -6,7 +6,7 @@ RUN dpkg --add-architecture i386 && \
 RUN curl -o - https://dl.winehq.org/wine-builds/Release.key | apt-key add - && \
     echo "deb https://dl.winehq.org/wine-builds/debian/ buster main" > /etc/apt/sources.list.d/winehq.list
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y winehq-staging meson mingw-w64 mingw-w64-i686-dev mingw-w64-x86-64-dev build-essential bsdtar && \
+    apt-get install --no-install-recommends -y winehq-staging meson mingw-w64 mingw-w64-i686-dev mingw-w64-x86-64-dev build-essential git bsdtar && \
     rm -rf /var/lib/apt/lists/*
 
 RUN curl -L https://github.com/KhronosGroup/glslang/releases/download/7.8.2850/glslang-master-linux-Release.zip | bsdtar -xvf - -C /usr && \

@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM debian:sid-slim
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install --no-install-recommends -y curl apt-transport-https gnupg ca-certificates && \

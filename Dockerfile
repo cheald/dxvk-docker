@@ -2,9 +2,11 @@ FROM debian:sid-slim
 
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
+    apt-get upgrade -y && \
     apt-get install --no-install-recommends -y curl apt-transport-https gnupg ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install --no-install-recommends -y meson mingw-w64 mingw-w64-i686-dev mingw-w64-x86-64-dev build-essential git libarchive-tools && \
     rm -rf /var/lib/apt/lists/*
 

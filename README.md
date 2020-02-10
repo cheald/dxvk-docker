@@ -2,7 +2,7 @@
 
 This is a fork of [https://github.com/cheald/dxvk-docker](https://github.com/cheald/dxvk-docker).
 
-Provides a Dockerfile which provides a full build environment for [DXVK](https://github.com/doitsujin/dxvk) and friends including scripts to install into Proton 4.11.
+Provides a Dockerfile which provides a full build environment for [DXVK](https://github.com/doitsujin/dxvk) and friends including scripts to install into Proton 5.0.
 
 - Run `./setup-dxvk-docker.sh` to setup/refresh the build image.
 - Clone DXVK and/or friends into the root folder of this project.

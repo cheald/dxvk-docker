@@ -1,4 +1,3 @@
-
 #!/bin/bash
 cp --verbose out/dxvk-master/x64/dxgi.dll ~/.steam/steam/steamapps/common/Proton\ 5.0/dist/lib64/wine/dxvk/
 cp --verbose out/dxvk-master/x64/d3d11.dll ~/.steam/steam/steamapps/common/Proton\ 5.0/dist/lib64/wine/dxvk/

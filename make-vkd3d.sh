@@ -4,4 +4,4 @@ if [ -x "$(command -v podman)" ]; then
     alias docker=podman
 fi
 
-mkdir -p out && docker run --rm -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/vkd3d-proton:/root/build -v $(pwd)/out:/root/build/out dxvk-docker:latest /root/build.sh vkd3d-proton
+docker run --rm -e UID=$UID -e GID=$(id -g $USER) -it -v $(pwd)/vkd3d-proton:/root/build -v $(pwd)/out:/root/build/out dxvk-docker:latest /root/build.sh vkd3d-proton

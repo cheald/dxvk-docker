@@ -5,6 +5,5 @@ RUN pacman --noconfirm -Syuu
 RUN pacman --noconfirm -S git gcc mingw-w64-gcc mingw-w64-tools meson ninja glslang
 
 WORKDIR /root/build
-RUN mkdir -p /root/out/dxvk-master
 ADD build.sh /root/build.sh
-CMD ["/root/build.sh"]
+CMD [ "/root/build.sh" ]
